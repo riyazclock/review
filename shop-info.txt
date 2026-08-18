@@ -1,0 +1,6 @@
+name=Your Shop Name
+logo=https://raw.githubusercontent.com/USER/REPO/main/logo.png
+google=https://share.google/JWMDxAlxPaUKLDbpd
+instagram=https://instagram.com/yourshop
+whatsapp=https://wa.me/91XXXXXXXXXX
+facebook=https://facebook.com/yourshop
