@@ -1,6 +1,6 @@
 name=Your Shop Name
 logo=https://raw.githubusercontent.com/USER/REPO/main/logo.png
-google=https://www.google.com/search?sca_esv=c6f53c73cfd2939f&rlz=1C1RXQR_enIN950IN951&sxsrf=APpeQntTYGO_gCir9q6ZJlC3UIZYGljm_g:1787054323014&kgmid=/g/11zbc_qvvl&q=Top+No.1+Billing+Software+in+Chennai+-+Apex+Enterprises+-+Scalecom+Pos&shem=dlvs1,epsd1,ltae,rimspwouoe&shndl=30&source=sh/x/loc/uni/m1/1&kgs=df8c054ee36b02da&utm_source=dlvs1,epsd1,ltae,rimspwouoe,sh/x/loc/uni/m1/1#lrd=0x3a526734bf91e017:0x59628e0a4aa4230e,3,,,,
+google=https:https://search.google.com/local/writereview?placeid=ChIJF-CRvzRnUjoRDiOkSgqOYlk&utm_sourc
 instagram=https://instagram.com/yourshop
 whatsapp=https://wa.me/91XXXXXXXXXX
 facebook=https://facebook.com/yourshop
