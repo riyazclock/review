@@ -1,6 +1,6 @@
 name=Your Shop Name
 logo=https://raw.githubusercontent.com/USER/REPO/main/logo.png
-google=https:https://search.google.com/local/writereview?placeid=ChIJF-CRvzRnUjoRDiOkSgqOYlk&utm_sourc
+google=https:https://search.google.com/local/writereview?placeid=ChIJF-CRvzRnUjoRDiOkSgqOYlk&utm_source
 instagram=https://instagram.com/yourshop
 whatsapp=https://wa.me/91XXXXXXXXXX
 facebook=https://facebook.com/yourshop
