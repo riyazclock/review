@@ -1,0 +1,539 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1" />
+<title>Shop Reviews</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,500&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg: #0B0C0F;
+    --bg-2: #121419;
+    --panel: rgba(255,255,255,0.035);
+    --panel-solid: #15171D;
+    --ink: #F3EFE6;
+    --ink-soft: #9B958A;
+    --ink-dim: #6C685F;
+    --gold: #CBA35C;
+    --gold-bright: #E9CD8E;
+    --gold-dim: rgba(203,163,92,0.28);
+    --line: rgba(203,163,92,0.16);
+    --danger: #D97757;
+    --radius: 20px;
+  }
+  *{ box-sizing:border-box; -webkit-tap-highlight-color: transparent; }
+  html,body{ height:100%; }
+  body{
+    margin:0;
+    background:
+      radial-gradient(ellipse 120% 60% at 50% -10%, rgba(203,163,92,0.14), transparent 60%),
+      radial-gradient(ellipse 90% 50% at 90% 100%, rgba(203,163,92,0.06), transparent 60%),
+      var(--bg);
+    color: var(--ink);
+    font-family: "Manrope", -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    display:flex;
+    justify-content:center;
+    min-height:100vh;
+  }
+  #app{
+    width:100%;
+    max-width:440px;
+    min-height:100vh;
+    position:relative;
+    display:flex;
+    flex-direction:column;
+    overflow:hidden;
+  }
+  #app::before{
+    content:"";
+    position:absolute; inset:0;
+    background-image:
+      linear-gradient(var(--line) 1px, transparent 1px),
+      linear-gradient(90deg, var(--line) 1px, transparent 1px);
+    background-size: 34px 34px;
+    opacity:0.35;
+    mask-image: radial-gradient(ellipse 80% 50% at 50% 0%, black, transparent 70%);
+    pointer-events:none;
+  }
+  .screen{ display:none; flex-direction:column; flex:1; padding:34px 26px 36px; position:relative; z-index:1; }
+  .screen.active{ display:flex; animation: enter .45s cubic-bezier(.22,.68,0,1); }
+  @keyframes enter{ from{ opacity:0; transform:translateY(10px);} to{opacity:1; transform:translateY(0);} }
+
+  .stagger > *{ opacity:0; animation: rise .55s cubic-bezier(.22,.68,0,1) forwards; }
+  .stagger > *:nth-child(1){ animation-delay: .05s; }
+  .stagger > *:nth-child(2){ animation-delay: .12s; }
+  .stagger > *:nth-child(3){ animation-delay: .19s; }
+  .stagger > *:nth-child(4){ animation-delay: .26s; }
+  .stagger > *:nth-child(5){ animation-delay: .33s; }
+  @keyframes rise{ from{ opacity:0; transform:translateY(14px);} to{opacity:1; transform:translateY(0);} }
+
+  /* ---------- header / brand ---------- */
+  .brand{ text-align:center; margin-top:6px; margin-bottom:32px; }
+  .logo-ring{
+    width:112px; height:112px; margin:0 auto 20px; position:relative;
+  }
+  .logo-ring::before{
+    content:""; position:absolute; inset:-6px; border-radius:50%;
+    border:1px solid var(--gold-dim);
+  }
+  .logo-ring::after{
+    content:""; position:absolute; inset:-14px; border-radius:50%;
+    border:1px solid rgba(203,163,92,0.08);
+  }
+  .logo-wrap{
+    width:112px; height:112px; border-radius:50%;
+    background: linear-gradient(160deg, var(--panel-solid), #0E0F13);
+    border: 1px solid var(--gold-dim);
+    display:flex; align-items:center; justify-content:center;
+    overflow:hidden; position:relative;
+    box-shadow: 0 0 0 1px rgba(0,0,0,0.4), 0 18px 40px -12px rgba(203,163,92,0.25);
+  }
+  .logo-wrap img{ width:100%; height:100%; object-fit:cover; }
+  .logo-wrap .fallback{ font-family: "Cormorant Garamond", serif; font-size:40px; color:var(--gold-bright); font-weight:600; }
+  .eyebrow{
+    font-size:10.5px; text-transform:uppercase; letter-spacing:3.5px;
+    color: var(--gold); margin:0 0 10px; font-weight:700;
+  }
+  h1.shop-name{
+    font-family: "Cormorant Garamond", serif;
+    font-size: 36px;
+    font-weight: 600;
+    font-style: italic;
+    margin: 0 0 10px;
+    letter-spacing: 0.2px;
+    line-height:1.15;
+    background: linear-gradient(180deg, #FFFFFF, var(--ink-soft));
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+  .divider{
+    width:46px; height:1px; margin: 0 auto;
+    background: linear-gradient(90deg, transparent, var(--gold), transparent);
+  }
+  .tagline{ font-size:13px; color:var(--ink-soft); margin: 14px 0 0; }
+
+  /* ---------- buttons ---------- */
+  .stack{ display:flex; flex-direction:column; gap:13px; margin-top:8px; }
+  .btn{
+    display:flex; align-items:center; gap:15px;
+    width:100%; padding:17px 19px;
+    border-radius: var(--radius);
+    border: 1px solid rgba(255,255,255,0.07);
+    background: var(--panel);
+    backdrop-filter: blur(14px);
+    font-size:15.5px; font-weight:600; color:var(--ink);
+    cursor:pointer; text-align:left; text-decoration:none;
+    transition: transform .15s ease, box-shadow .15s ease, border-color .15s ease;
+    font-family: "Manrope", sans-serif;
+  }
+  .btn:active{ transform: scale(0.97); }
+  .btn:hover{ border-color: var(--gold-dim); }
+  .btn .icon{
+    width:42px; height:42px; border-radius:13px;
+    display:flex; align-items:center; justify-content:center;
+    flex-shrink:0; font-size:19px; color:#fff;
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(255,255,255,0.08);
+  }
+  .btn .sub{ display:block; font-weight:500; font-size:12px; color:var(--ink-dim); margin-top:3px; letter-spacing:0.2px; }
+  .btn.primary{
+    background: linear-gradient(135deg, var(--gold-bright), var(--gold) 60%, #B4894A);
+    border-color: transparent; color:#181109;
+    box-shadow: 0 14px 30px -10px rgba(203,163,92,0.55);
+  }
+  .btn.primary .icon{ background: rgba(24,17,9,0.14); border-color: rgba(24,17,9,0.1); color:#181109; }
+  .btn.primary .sub{ color: rgba(24,17,9,0.65); }
+  .icon.instagram{ background: linear-gradient(135deg,#f58529,#dd2a7b,#8134af); border-color:transparent; }
+  .icon.whatsapp{ background:#25D366; border-color:transparent; }
+  .icon.facebook{ background:#1877F2; border-color:transparent; }
+
+  .footer-note{ margin-top:auto; padding-top:26px; text-align:center; font-size:11px; color:var(--ink-dim); letter-spacing:0.3px; }
+
+  /* ---------- rating screen ---------- */
+  .back{
+    align-self:flex-start; border:none; background:none; color:var(--ink-soft);
+    font-size:13px; margin-bottom:26px; cursor:pointer; padding:6px 0;
+    display:flex; align-items:center; gap:6px; font-weight:600; letter-spacing:0.3px;
+    font-family:"Manrope", sans-serif;
+  }
+  .back:hover{ color: var(--gold-bright); }
+  .eyebrow-sm{ font-size:10.5px; text-transform:uppercase; letter-spacing:3px; color:var(--gold); font-weight:700; margin:0 0 8px; }
+  h2.q{ font-family: "Cormorant Garamond", serif; font-style:italic; font-size:30px; font-weight:600; margin:0 0 8px; color:#FFF; }
+  p.hint{ color:var(--ink-soft); font-size:13.5px; margin:0 0 28px; line-height:1.5; }
+  .rating-grid{ display:grid; grid-template-columns: 1fr 1fr; gap:13px; }
+  .rate-btn{
+    border-radius: var(--radius); border:1px solid rgba(255,255,255,0.07);
+    background: var(--panel); backdrop-filter: blur(14px);
+    padding:26px 10px; text-align:center; cursor:pointer; font-weight:700; font-size:14.5px;
+    color: var(--ink);
+    transition: transform .15s ease, border-color .15s ease, background .15s ease;
+    letter-spacing:0.2px;
+  }
+  .rate-btn:active{ transform:scale(0.96); }
+  .rate-btn:hover{ border-color: var(--gold-dim); background: rgba(203,163,92,0.06); }
+  .rate-btn .emoji{ font-size:32px; display:block; margin-bottom:12px; filter: saturate(0.9); }
+
+  /* ---------- templates screen ---------- */
+  .templates-list{ display:flex; flex-direction:column; gap:13px; }
+  .template-card{
+    border:1px solid rgba(255,255,255,0.07); border-radius:16px; padding:20px 20px 18px;
+    background: var(--panel); backdrop-filter: blur(14px);
+    cursor:pointer; font-size:14px; line-height:1.6;
+    position:relative; color: #E7E2D6;
+    font-family: "Cormorant Garamond", serif; font-size: 17px; font-style: italic;
+    transition: transform .15s ease, border-color .15s ease;
+  }
+  .template-card::before{
+    content:"\201C"; position:absolute; top:4px; left:14px;
+    font-family:"Cormorant Garamond", serif; font-size:38px; color: var(--gold-dim);
+    font-style:normal; line-height:1;
+  }
+  .template-card:active{ transform: scale(0.98); }
+  .template-card:hover{ border-color: var(--gold-dim); }
+  .template-card .tap-hint{
+    display:block; margin-top:12px; font-size:10.5px; color: var(--gold); font-weight:700;
+    font-family:"Manrope", sans-serif; font-style:normal; letter-spacing:1.2px; text-transform:uppercase;
+  }
+  .refresh-link{
+    align-self:center; margin-top:22px; background:none; border:none;
+    color: var(--gold); font-size:12.5px; font-weight:700; cursor:pointer;
+    letter-spacing:0.6px; text-transform:uppercase; font-family:"Manrope", sans-serif;
+  }
+  .refresh-link:hover{ color: var(--gold-bright); }
+
+  /* ---------- misc states ---------- */
+  .spinner{
+    width:28px; height:28px; border-radius:50%;
+    border:2.5px solid rgba(255,255,255,0.08); border-top-color: var(--gold);
+    animation: spin .8s linear infinite; margin: 44px auto;
+  }
+  @keyframes spin{ to{ transform:rotate(360deg); } }
+  .center-msg{ text-align:center; color:var(--ink-soft); font-size:13.5px; margin-top:20px; }
+  .error-msg{ text-align:center; color: var(--danger); font-size:13.5px; margin-top:20px; }
+
+  .toast{
+    position:fixed; left:50%; bottom:30px; transform:translateX(-50%) translateY(20px);
+    background: linear-gradient(135deg, var(--gold-bright), var(--gold));
+    color:#181109; padding:13px 22px; border-radius:999px;
+    font-size:13px; font-weight:700; opacity:0; pointer-events:none; transition: all .3s cubic-bezier(.22,.68,0,1);
+    max-width: 88%; text-align:center; z-index:50;
+    box-shadow: 0 14px 30px -8px rgba(203,163,92,0.5);
+  }
+  .toast.show{ opacity:1; transform:translateX(-50%) translateY(0); }
+</style>
+</head>
+<body>
+
+<div id="app">
+
+  <!-- ============ SCREEN 1: HOME ============ -->
+  <div class="screen active" id="screen-home">
+    <div class="brand stagger">
+      <div class="logo-ring">
+        <div class="logo-wrap" id="logo-wrap">
+          <div class="spinner"></div>
+        </div>
+      </div>
+      <p class="eyebrow" id="shop-eyebrow" style="visibility:hidden;">Est. moments of good service</p>
+      <h1 class="shop-name" id="shop-name">Loading&hellip;</h1>
+      <div class="divider"></div>
+      <p class="tagline">We'd love to hear from you</p>
+    </div>
+
+    <div class="stack" id="home-buttons">
+      <!-- buttons injected by JS -->
+    </div>
+
+    <p class="footer-note" id="home-error" style="display:none;"></p>
+  </div>
+
+  <!-- ============ SCREEN 2: RATING ============ -->
+  <div class="screen" id="screen-rating">
+    <button class="back" onclick="goHome()">&larr; Back</button>
+    <div class="stagger">
+      <p class="eyebrow-sm">Your visit</p>
+      <h2 class="q">How was your experience?</h2>
+      <p class="hint">Pick the option that fits best &mdash; it only takes a second.</p>
+      <div class="rating-grid">
+        <div class="rate-btn" data-rating="excellent" onclick="chooseRating('excellent')">
+          <span class="emoji">🤩</span>Excellent
+        </div>
+        <div class="rate-btn" data-rating="good" onclick="chooseRating('good')">
+          <span class="emoji">🙂</span>Good
+        </div>
+        <div class="rate-btn" data-rating="average" onclick="chooseRating('average')">
+          <span class="emoji">😐</span>Average
+        </div>
+        <div class="rate-btn" data-rating="ok" onclick="chooseRating('ok')">
+          <span class="emoji">🙁</span>OK
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ SCREEN 3: TEMPLATES ============ -->
+  <div class="screen" id="screen-templates">
+    <button class="back" onclick="goToRating()">&larr; Back</button>
+    <p class="eyebrow-sm">Pick your words</p>
+    <h2 class="q">Tap a review to use it</h2>
+    <p class="hint">We'll copy it for you and open Google &mdash; just paste &amp; post.</p>
+    <div class="templates-list" id="templates-list">
+      <div class="spinner"></div>
+    </div>
+    <button class="refresh-link" id="refresh-btn" style="display:none;" onclick="reshuffleTemplates()">Show 5 different ones</button>
+  </div>
+
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* =========================================================================
+   CONFIGURATION
+   -------------------------------------------------------------------------
+   1) SHOP_INFO_URL  -> raw GitHub URL of a .txt file with these lines:
+
+        name=Your Shop Name
+        logo=https://raw.githubusercontent.com/USER/REPO/main/logo.png
+        google=https://g.page/r/XXXXXXXXXXXX/review
+        instagram=https://instagram.com/yourshop
+        whatsapp=https://wa.me/91XXXXXXXXXX
+        facebook=https://facebook.com/yourshop
+
+      - One "key=value" per line. Order doesn't matter.
+      - Leave a value blank (or delete the line) to hide that button.
+      - Must be the "raw" GitHub URL, e.g.:
+        https://raw.githubusercontent.com/USER/REPO/main/shop-info.txt
+
+   2) REVIEW_TEMPLATES_URL -> raw GitHub URL of a .txt file with one
+      review template per line (blank lines are ignored). Put 1000+
+      lines in there; 5 are picked at random each time.
+
+        Loved the service here, staff were super friendly!
+        Great quality and quick service, highly recommend.
+        ... (1000+ lines)
+   ========================================================================= */
+  const CONFIG = {
+    SHOP_INFO_URL: "https://raw.githubusercontent.com/USERNAME/REPO/main/shop-info.txt",
+    REVIEW_TEMPLATES_URL: "https://raw.githubusercontent.com/USERNAME/REPO/main/review-templates.txt"
+  };
+/* ========================================================================= */
+
+  let shopData = {};
+  let allTemplates = [];
+  let currentRating = null;
+
+  const $ = (id) => document.getElementById(id);
+
+  function showScreen(id){
+    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+    const target = $(id);
+    target.classList.add('active');
+    // restart stagger entrance animation each time the screen is shown
+    target.querySelectorAll('.stagger').forEach(el => {
+      el.style.animation = 'none';
+      void el.offsetWidth;
+      el.style.animation = '';
+    });
+  }
+
+  function toast(msg){
+    const t = $('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 2200);
+  }
+
+  /* ---------------- parse "key=value" txt into an object ---------------- */
+  function parseShopInfo(text){
+    const data = {};
+    text.split('\n').forEach(line => {
+      line = line.trim();
+      if(!line || line.startsWith('#')) return;
+      const idx = line.indexOf('=');
+      if(idx === -1) return;
+      const key = line.slice(0, idx).trim().toLowerCase();
+      const value = line.slice(idx + 1).trim();
+      if(value) data[key] = value;
+    });
+    return data;
+  }
+
+  /* ---------------- load shop info & build home screen ---------------- */
+  async function loadShopInfo(){
+    try{
+      const res = await fetch(CONFIG.SHOP_INFO_URL, { cache: "no-store" });
+      if(!res.ok) throw new Error("Could not load shop info (" + res.status + ")");
+      shopData = parseShopInfo(await res.text());
+      renderHome();
+    }catch(err){
+      $('shop-name').textContent = "Welcome";
+      $('logo-wrap').innerHTML = '<span class="fallback">?</span>';
+      $('home-error').style.display = 'block';
+      $('home-error').textContent = "Couldn't load shop details. Check the GitHub link and try again.";
+      console.error(err);
+    }
+  }
+
+  function renderHome(){
+    // name
+    $('shop-name').textContent = shopData.name || "Our Shop";
+    $('shop-eyebrow').style.visibility = 'visible';
+
+    // logo
+    const logoWrap = $('logo-wrap');
+    if(shopData.logo){
+      const img = new Image();
+      img.onload = () => { logoWrap.innerHTML = ''; logoWrap.appendChild(img); };
+      img.onerror = () => { logoWrap.innerHTML = '<span class="fallback">' + initials(shopData.name) + '</span>'; };
+      img.src = shopData.logo;
+      img.alt = shopData.name || "Shop logo";
+    } else {
+      logoWrap.innerHTML = '<span class="fallback">' + initials(shopData.name) + '</span>';
+    }
+
+    // buttons
+    const wrap = $('home-buttons');
+    wrap.innerHTML = '';
+
+    if(shopData.google){
+      wrap.appendChild(makeButton({
+        primary: true,
+        iconHtml: '✦',
+        iconClass: '',
+        title: 'Leave us a Google Review',
+        sub: 'Takes less than a minute',
+        onClick: () => showScreen('screen-rating')
+      }));
+    }
+    if(shopData.whatsapp){
+      wrap.appendChild(makeLinkButton({
+        href: shopData.whatsapp, iconHtml: '💬', iconClass: 'whatsapp',
+        title: 'Message us on WhatsApp'
+      }));
+    }
+    if(shopData.instagram){
+      wrap.appendChild(makeLinkButton({
+        href: shopData.instagram, iconHtml: '📷', iconClass: 'instagram',
+        title: 'Follow us on Instagram'
+      }));
+    }
+    if(shopData.facebook){
+      wrap.appendChild(makeLinkButton({
+        href: shopData.facebook, iconHtml: '👍', iconClass: 'facebook',
+        title: 'Visit our Facebook Page'
+      }));
+    }
+
+    if(!wrap.children.length){
+      wrap.innerHTML = '<p class="center-msg">No links configured yet.</p>';
+    }
+  }
+
+  function initials(name){
+    if(!name) return "🏬";
+    return name.trim().split(/\s+/).slice(0,2).map(w => w[0].toUpperCase()).join('');
+  }
+
+  function makeButton({primary, iconHtml, iconClass, title, sub, onClick}){
+    const b = document.createElement('button');
+    b.className = 'btn' + (primary ? ' primary' : '');
+    b.innerHTML = `<span class="icon ${iconClass}">${iconHtml}</span>
+                   <span><span class="title">${title}</span>${sub ? `<span class="sub">${sub}</span>` : ''}</span>`;
+    b.onclick = onClick;
+    return b;
+  }
+
+  function makeLinkButton({href, iconHtml, iconClass, title}){
+    const a = document.createElement('a');
+    a.className = 'btn';
+    a.href = href;
+    a.target = '_blank';
+    a.rel = 'noopener noreferrer';
+    a.innerHTML = `<span class="icon ${iconClass}">${iconHtml}</span><span class="title">${title}</span>`;
+    return a;
+  }
+
+  function goHome(){ showScreen('screen-home'); }
+  function goToRating(){ showScreen('screen-rating'); }
+
+  /* ---------------- rating chosen -> load templates ---------------- */
+  async function chooseRating(rating){
+    currentRating = rating;
+    showScreen('screen-templates');
+    $('refresh-btn').style.display = 'none';
+    $('templates-list').innerHTML = '<div class="spinner"></div>';
+
+    try{
+      if(allTemplates.length === 0){
+        const res = await fetch(CONFIG.REVIEW_TEMPLATES_URL, { cache: "no-store" });
+        if(!res.ok) throw new Error("Could not load templates (" + res.status + ")");
+        const text = await res.text();
+        allTemplates = text.split('\n').map(l => l.trim()).filter(Boolean);
+      }
+      if(allTemplates.length === 0){
+        $('templates-list').innerHTML = '<p class="error-msg">No review templates found yet.</p>';
+        return;
+      }
+      renderTemplates();
+      $('refresh-btn').style.display = 'block';
+    }catch(err){
+      $('templates-list').innerHTML = '<p class="error-msg">Couldn\'t load review templates. Check the GitHub link and try again.</p>';
+      console.error(err);
+    }
+  }
+
+  function pickRandom(arr, n){
+    const copy = arr.slice();
+    const picked = [];
+    n = Math.min(n, copy.length);
+    for(let i = 0; i < n; i++){
+      const idx = Math.floor(Math.random() * copy.length);
+      picked.push(copy[idx]);
+      copy.splice(idx, 1);
+    }
+    return picked;
+  }
+
+  function renderTemplates(){
+    const chosen = pickRandom(allTemplates, 5);
+    const list = $('templates-list');
+    list.innerHTML = '';
+    chosen.forEach(text => {
+      const card = document.createElement('div');
+      card.className = 'template-card';
+      card.innerHTML = `${escapeHtml(text)}<span class="tap-hint">Tap to copy &amp; post on Google &rarr;</span>`;
+      card.onclick = () => useTemplate(text);
+      list.appendChild(card);
+    });
+  }
+
+  function reshuffleTemplates(){ renderTemplates(); }
+
+  function escapeHtml(str){
+    const d = document.createElement('div');
+    d.textContent = str;
+    return d.innerHTML;
+  }
+
+  async function useTemplate(text){
+    try{
+      await navigator.clipboard.writeText(text);
+      toast('Review copied! Paste it on the next screen.');
+    }catch(err){
+      toast('Opening Google review — copy the text above first.');
+    }
+    setTimeout(() => {
+      if(shopData.google) window.open(shopData.google, '_blank', 'noopener,noreferrer');
+    }, 500);
+  }
+
+  /* ---------------- init ---------------- */
+  loadShopInfo();
+</script>
+
+</body>
+</html>
