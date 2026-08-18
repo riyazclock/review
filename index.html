@@ -519,19 +519,55 @@
     return d.innerHTML;
   }
 
+  /* ---------------- copy helper with a synchronous fallback ---------------- */
+  function legacyCopy(text){
+    // Synchronous, works even in contexts where the async Clipboard API
+    // is unavailable or blocked (older/locked-down mobile browsers).
+    try{
+      const ta = document.createElement('textarea');
+      ta.value = text;
+      ta.setAttribute('readonly', '');
+      ta.style.position = 'fixed';
+      ta.style.top = '0';
+      ta.style.left = '-9999px';
+      document.body.appendChild(ta);
+      ta.focus();
+      ta.select();
+      ta.setSelectionRange(0, text.length);
+      const ok = document.execCommand('copy');
+      document.body.removeChild(ta);
+      return ok;
+    }catch(e){
+      return false;
+    }
+  }
+
   async function useTemplate(text){
-    // Open Google review FIRST, synchronously within the tap — mobile browsers
-    // block window.open() if it happens after any delay/await, since it no
-    // longer counts as a direct user gesture.
+    // IMPORTANT: copy BEFORE opening the Google tab. navigator.clipboard
+    // requires the document to be focused — window.open() shifts focus to
+    // the new tab immediately, which makes the clipboard write silently
+    // fail on mobile. So we copy first, while focus is still here, then
+    // open the review link right after.
+    let copied = false;
+
+    if(navigator.clipboard && navigator.clipboard.writeText){
+      try{
+        await navigator.clipboard.writeText(text);
+        copied = true;
+      }catch(err){
+        copied = legacyCopy(text);
+      }
+    } else {
+      copied = legacyCopy(text);
+    }
+
     if(shopData.google){
       window.open(shopData.google, '_blank', 'noopener,noreferrer');
     }
-    try{
-      await navigator.clipboard.writeText(text);
-      toast('Review copied! Paste it in the Google tab that just opened.');
-    }catch(err){
-      toast('Please copy this review manually, then paste it on Google.');
-    }
+
+    toast(copied
+      ? 'Review copied! Paste it in the Google tab that just opened.'
+      : 'Please copy this review manually, then paste it on Google.');
   }
 
   /* ---------------- init ---------------- */
