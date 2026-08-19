@@ -223,6 +223,42 @@
     box-shadow: 0 14px 30px -8px rgba(203,163,92,0.5);
   }
   .toast.show{ opacity:1; transform:translateX(-50%) translateY(0); }
+
+  /* ---------- copy modal (guaranteed-copy fallback) ---------- */
+  .modal-overlay{
+    position:fixed; inset:0; background: rgba(6,6,8,0.72);
+    backdrop-filter: blur(4px);
+    display:flex; align-items:flex-end; justify-content:center;
+    z-index:100; opacity:0; pointer-events:none; transition: opacity .25s ease;
+  }
+  .modal-overlay.show{ opacity:1; pointer-events:auto; }
+  .modal-sheet{
+    width:100%; max-width:440px; background: var(--panel-solid);
+    border:1px solid var(--gold-dim); border-bottom:none;
+    border-radius: 22px 22px 0 0; padding:24px 22px 30px;
+    transform: translateY(100%); transition: transform .3s cubic-bezier(.22,.68,0,1);
+  }
+  .modal-overlay.show .modal-sheet{ transform: translateY(0); }
+  .modal-label{ font-size:10.5px; text-transform:uppercase; letter-spacing:2.5px; color:var(--gold); font-weight:700; margin:0 0 12px; }
+  .modal-textarea{
+    width:100%; min-height:110px; resize:none; border-radius:14px;
+    border:1px solid rgba(255,255,255,0.12); background: rgba(255,255,255,0.04);
+    color: var(--ink); font-family:"Cormorant Garamond", serif; font-size:17px; font-style:italic;
+    padding:14px; line-height:1.55; margin-bottom:16px;
+  }
+  .modal-btn-row{ display:flex; gap:10px; }
+  .modal-btn{
+    flex:1; border:none; border-radius:14px; padding:15px 10px;
+    font-weight:700; font-size:14.5px; cursor:pointer; font-family:"Manrope", sans-serif;
+  }
+  .modal-btn.copy{
+    background: linear-gradient(135deg, var(--gold-bright), var(--gold) 60%, #B4894A);
+    color:#181109;
+  }
+  .modal-btn.cancel{
+    background: rgba(255,255,255,0.06); color: var(--ink-soft);
+    border:1px solid rgba(255,255,255,0.1);
+  }
 </style>
 </head>
 <body>
@@ -289,6 +325,17 @@
 </div>
 
 <div class="toast" id="toast"></div>
+
+<div class="modal-overlay" id="copy-modal">
+  <div class="modal-sheet">
+    <p class="modal-label">Your review</p>
+    <textarea class="modal-textarea" id="copy-textarea" readonly></textarea>
+    <div class="modal-btn-row">
+      <button class="modal-btn cancel" onclick="closeCopyModal()">Cancel</button>
+      <button class="modal-btn copy" id="modal-copy-btn" onclick="confirmCopy()">Copy &amp; Continue</button>
+    </div>
+  </div>
+</div>
 
 <script>
 /* =========================================================================
@@ -502,7 +549,8 @@
     const chosen = pickRandom(allTemplates, 5);
     const list = $('templates-list');
     list.innerHTML = '';
-    chosen.forEach(text => {
+    chosen.forEach(baseText => {
+      const text = variateText(baseText); // varied once per card; same text is shown + copied
       const card = document.createElement('div');
       card.className = 'template-card';
       card.innerHTML = `${escapeHtml(text)}<span class="tap-hint">Tap to copy &amp; post on Google &rarr;</span>`;
@@ -513,61 +561,128 @@
 
   function reshuffleTemplates(){ renderTemplates(); }
 
+  /* ---------------- light word-variation to avoid exact duplicates ----------------
+     Swaps a handful of common review words for natural synonyms each time a
+     template is shown, so if two different customers land on the same base
+     template, the text they actually post rarely matches word-for-word. */
+  const SYNONYMS = {
+    "great": ["fantastic","wonderful","excellent","amazing","superb"],
+    "amazing": ["fantastic","incredible","wonderful","outstanding"],
+    "excellent": ["outstanding","exceptional","superb","top-notch"],
+    "friendly": ["warm","welcoming","kind","courteous"],
+    "team": ["team","staff","crew"],
+    "staff": ["team","staff","crew"],
+    "love": ["love","really like","adore"],
+    "loved": ["loved","really liked","adored"],
+    "recommend": ["recommend","suggest"],
+    "quick": ["fast","speedy","prompt"],
+    "fast": ["quick","speedy","prompt"],
+    "helpful": ["accommodating","supportive","attentive"],
+    "best": ["best","finest","top"],
+    "awesome": ["awesome","fantastic","great"],
+    "nice": ["nice","pleasant","lovely"],
+    "clean": ["clean","spotless","tidy"],
+    "professional": ["professional","polished","skilled"],
+    "highly": ["highly","strongly","definitely"],
+    "perfect": ["perfect","flawless","ideal"],
+    "impressed": ["impressed","blown away","wowed"],
+    "wonderful": ["wonderful","lovely","delightful"],
+    "definitely": ["definitely","absolutely","certainly"],
+    "happy": ["happy","thrilled","delighted"],
+    "good": ["good","solid","great"]
+  };
+
+  function matchCase(sample, replacement){
+    if(sample === sample.toUpperCase() && sample !== sample.toLowerCase()){
+      return replacement.toUpperCase();
+    }
+    if(sample[0] === sample[0].toUpperCase()){
+      return replacement.charAt(0).toUpperCase() + replacement.slice(1);
+    }
+    return replacement;
+  }
+
+  function variateText(text){
+    return text.replace(/[A-Za-z']+/g, (word) => {
+      const options = SYNONYMS[word.toLowerCase()];
+      if(!options || Math.random() > 0.7) return word; // ~30% left as-is for extra variety
+      const pick = options[Math.floor(Math.random() * options.length)];
+      return matchCase(word, pick);
+    });
+  }
+
   function escapeHtml(str){
     const d = document.createElement('div');
     d.textContent = str;
     return d.innerHTML;
   }
 
-  /* ---------------- copy helper with a synchronous fallback ---------------- */
-  function legacyCopy(text){
-    // Synchronous, works even in contexts where the async Clipboard API
-    // is unavailable or blocked (older/locked-down mobile browsers).
+  /* ---------------- copy helpers ---------------- */
+  function execCommandCopy(el){
     try{
-      const ta = document.createElement('textarea');
-      ta.value = text;
-      ta.setAttribute('readonly', '');
-      ta.style.position = 'fixed';
-      ta.style.top = '0';
-      ta.style.left = '-9999px';
-      document.body.appendChild(ta);
-      ta.focus();
-      ta.select();
-      ta.setSelectionRange(0, text.length);
-      const ok = document.execCommand('copy');
-      document.body.removeChild(ta);
-      return ok;
+      el.focus();
+      el.select();
+      el.setSelectionRange(0, el.value.length);
+      return document.execCommand('copy');
     }catch(e){
       return false;
     }
   }
 
-  async function useTemplate(text){
-    // IMPORTANT: copy BEFORE opening the Google tab. navigator.clipboard
-    // requires the document to be focused — window.open() shifts focus to
-    // the new tab immediately, which makes the clipboard write silently
-    // fail on mobile. So we copy first, while focus is still here, then
-    // open the review link right after.
-    let copied = false;
+  let pendingText = null;
 
+  async function useTemplate(text){
+    // First, try a quiet, automatic copy (works fine on iOS Safari and
+    // most desktop browsers when triggered directly by this tap).
+    let copied = false;
     if(navigator.clipboard && navigator.clipboard.writeText){
       try{
         await navigator.clipboard.writeText(text);
         copied = true;
-      }catch(err){
-        copied = legacyCopy(text);
-      }
-    } else {
-      copied = legacyCopy(text);
+      }catch(err){ /* fall through to manual flow */ }
     }
 
+    if(copied){
+      if(shopData.google){
+        window.open(shopData.google, '_blank', 'noopener,noreferrer');
+      }
+      toast('Review copied! Paste it in the Google tab that just opened.');
+      return;
+    }
+
+    // Automatic copy isn't reliable on some Android Chrome builds no
+    // matter what JS does. Fall back to a manual flow: show the text
+    // pre-selected and let the user tap Copy themselves — a direct,
+    // fresh tap on a real button, which browsers always allow.
+    pendingText = text;
+    openCopyModal(text);
+  }
+
+  function openCopyModal(text){
+    const overlay = $('copy-modal');
+    const ta = $('copy-textarea');
+    ta.value = text;
+    overlay.classList.add('show');
+    // Pre-select the text so a long-press "Copy" also works even if the
+    // button tap somehow fails too.
+    setTimeout(() => { ta.focus(); ta.select(); }, 50);
+  }
+
+  function closeCopyModal(){
+    $('copy-modal').classList.remove('show');
+    pendingText = null;
+  }
+
+  function confirmCopy(){
+    const ta = $('copy-textarea');
+    const ok = execCommandCopy(ta);
+    closeCopyModal();
     if(shopData.google){
       window.open(shopData.google, '_blank', 'noopener,noreferrer');
     }
-
-    toast(copied
+    toast(ok
       ? 'Review copied! Paste it in the Google tab that just opened.'
-      : 'Please copy this review manually, then paste it on Google.');
+      : 'Text is selected above — copy it manually, then paste it on Google.');
   }
 
   /* ---------------- init ---------------- */
