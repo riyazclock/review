@@ -24,7 +24,7 @@
     --radius: 20px;
   }
   *{ box-sizing:border-box; -webkit-tap-highlight-color: transparent; }
-  html,body{ height:100%; }
+  html,body{ min-height:100%; }
   body{
     margin:0;
     background:
@@ -44,7 +44,7 @@
     position:relative;
     display:flex;
     flex-direction:column;
-    overflow:hidden;
+    overflow-x:hidden;
   }
   #app::before{
     content:"";
