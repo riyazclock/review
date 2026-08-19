@@ -1,0 +1,1119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Review Template Manager</title>
+<script src="https://js.puter.com/v2/"></script>
+<style>
+  :root{
+    --bg:#0B0C0F;
+    --surface: rgba(255,255,255,0.04);
+    --surface-border: rgba(255,255,255,0.12);
+    --hairline: rgba(255,255,255,0.08);
+    --text: #F2F1ED;
+    --text-dim: rgba(255,255,255,0.54);
+    --text-faint: rgba(255,255,255,0.38);
+    --accent: #CBA35C;
+    --accent-dim: #9c7d43;
+    --danger: #e57373;
+    --danger-strong: #c0392b;
+    --amber: #f0b429;
+    --green: #6bbf7b;
+    --radius: 14px;
+  }
+
+  *{ box-sizing: border-box; }
+  html,body{ height:100%; }
+  body{
+    margin:0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    display:flex;
+    flex-direction:column;
+    min-height:100vh;
+  }
+
+  /* App bar */
+  header.appbar{
+    display:flex;
+    align-items:center;
+    gap:4px;
+    padding: 14px 12px;
+    padding-top: max(14px, env(safe-area-inset-top));
+    border-bottom: 1px solid var(--hairline);
+    position: sticky;
+    top:0;
+    background: var(--bg);
+    z-index: 10;
+  }
+  header.appbar h1{
+    flex:1;
+    font-size: 18px;
+    font-weight: 600;
+    margin: 0 4px;
+    letter-spacing: 0.1px;
+    white-space: nowrap;
+    overflow:hidden;
+    text-overflow: ellipsis;
+  }
+  .icon-btn{
+    background: transparent;
+    border: none;
+    color: var(--text);
+    width: 40px;
+    height: 40px;
+    border-radius: 999px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    cursor:pointer;
+    transition: background .15s ease;
+    flex-shrink:0;
+    position:relative;
+  }
+  .icon-btn:hover{ background: rgba(255,255,255,0.08); }
+  .icon-btn:active{ background: rgba(255,255,255,0.14); }
+  .icon-btn:disabled{ opacity:0.35; cursor:default; pointer-events:none; }
+  .icon-btn svg{ width:20px; height:20px; }
+  .icon-btn .dot{
+    position:absolute; top:6px; right:6px;
+    width:7px; height:7px; border-radius:50%;
+    background: var(--green);
+    border: 1.5px solid var(--bg);
+    display:none;
+  }
+  .icon-btn .dot.show{ display:block; }
+
+  /* Body */
+  main{
+    flex:1;
+    display:flex;
+    flex-direction:column;
+    padding: 8px 16px 16px;
+    min-height:0;
+  }
+  .hint{
+    color: var(--text-dim);
+    font-size: 12.5px;
+    padding-bottom: 8px;
+    line-height:1.4;
+  }
+  .hint a, .link-btn{
+    color: var(--accent);
+    cursor:pointer;
+    text-decoration: underline;
+    background:none; border:none; padding:0; font: inherit;
+  }
+  .editor-frame{
+    flex:1;
+    display:flex;
+    background: var(--surface);
+    border: 1px solid var(--surface-border);
+    border-radius: var(--radius);
+    padding: 4px;
+    min-height: 0;
+  }
+  textarea#editor{
+    flex:1;
+    width:100%;
+    resize:none;
+    border:none;
+    outline:none;
+    background: transparent;
+    color: var(--text);
+    font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+    font-size: 13.5px;
+    line-height: 1.5;
+    padding: 12px;
+  }
+  textarea#editor::placeholder{ color: var(--text-faint); }
+
+  .progress{
+    height: 3px;
+    width: 100%;
+    margin-top: 8px;
+    border-radius: 2px;
+    overflow: hidden;
+    background: rgba(255,255,255,0.08);
+    display:none;
+  }
+  .progress.show{ display:block; }
+  .progress .bar{
+    height:100%;
+    width: 40%;
+    background: var(--accent);
+    animation: indet 1.1s ease-in-out infinite;
+  }
+  @keyframes indet{
+    0%{ transform: translateX(-100%); }
+    100%{ transform: translateX(250%); }
+  }
+
+  /* Bottom bar */
+  footer{
+    display:flex;
+    align-items:center;
+    gap:12px;
+    padding: 8px 16px 12px;
+    padding-bottom: max(12px, env(safe-area-inset-bottom));
+    border-top: 1px solid var(--hairline);
+  }
+  #status{
+    flex:1;
+    font-size:12px;
+  }
+  #status.dirty{ color: var(--amber); }
+  #status.clean{ color: var(--text-faint); }
+  #status.synced{ color: var(--green); }
+
+  .filled-btn{
+    background: var(--accent);
+    color: #1a1300;
+    border: none;
+    border-radius: 10px;
+    padding: 10px 18px;
+    font-size: 14px;
+    font-weight: 600;
+    display:flex;
+    align-items:center;
+    gap:8px;
+    cursor:pointer;
+    transition: filter .15s ease, transform .05s ease;
+  }
+  .filled-btn:hover{ filter: brightness(1.08); }
+  .filled-btn:active{ transform: scale(0.98); }
+  .filled-btn:disabled{
+    background: rgba(255,255,255,0.12);
+    color: var(--text-faint);
+    cursor:default;
+  }
+  .spinner{
+    width:14px; height:14px;
+    border-radius:50%;
+    border: 2px solid rgba(0,0,0,0.25);
+    border-top-color: #1a1300;
+    animation: spin .7s linear infinite;
+  }
+  @keyframes spin{ to{ transform: rotate(360deg); } }
+
+  /* Dialog */
+  .overlay{
+    position: fixed; inset:0;
+    background: rgba(0,0,0,0.55);
+    display:none;
+    align-items:center;
+    justify-content:center;
+    z-index: 100;
+    padding: 24px;
+  }
+  .overlay.show{ display:flex; }
+  .dialog{
+    background: #16171c;
+    border: 1px solid var(--surface-border);
+    border-radius: var(--radius);
+    max-width: 380px;
+    width:100%;
+    padding: 20px;
+    max-height: 88vh;
+    overflow-y: auto;
+  }
+  .dialog h2{
+    font-size: 16px;
+    margin: 0 0 10px;
+  }
+  .dialog p{
+    color: var(--text-dim);
+    font-size: 13.5px;
+    line-height:1.5;
+    margin: 0 0 20px;
+  }
+  .dialog-actions{
+    display:flex;
+    justify-content:flex-end;
+    gap: 8px;
+  }
+  .text-btn{
+    background: transparent;
+    border: none;
+    color: var(--text);
+    font-size: 13.5px;
+    font-weight: 600;
+    padding: 8px 12px;
+    border-radius: 8px;
+    cursor:pointer;
+  }
+  .text-btn:hover{ background: rgba(255,255,255,0.08); }
+  .text-btn.danger{ color: var(--danger); }
+  .text-btn.accent{ color: var(--accent); }
+
+  .field{
+    display:flex;
+    flex-direction:column;
+    gap:5px;
+    font-size:12px;
+    color: var(--text-dim);
+    margin-bottom: 12px;
+  }
+  .field input, .field select{
+    padding: 10px 12px;
+    border-radius: 8px;
+    border: 1px solid var(--surface-border);
+    background: rgba(255,255,255,0.03);
+    color: var(--text);
+    font-size: 13.5px;
+    outline: none;
+    font-family: inherit;
+  }
+  .field select{ appearance:none; -webkit-appearance:none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23F2F1ED' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E"); background-repeat:no-repeat; background-position: right 10px center; background-size:16px; padding-right: 34px; }
+  .field input:focus, .field select:focus{ border-color: var(--accent-dim); }
+  .field .field-hint{ font-size:11px; color: var(--text-faint); }
+
+  /* AI generate preview list */
+  .gen-list{
+    display:flex;
+    flex-direction:column;
+    gap:2px;
+    margin-bottom: 16px;
+    max-height: 45vh;
+    overflow-y:auto;
+    border: 1px solid var(--surface-border);
+    border-radius: 10px;
+    padding: 4px;
+  }
+  .gen-item{
+    display:flex;
+    align-items:flex-start;
+    gap:10px;
+    padding: 8px;
+    border-radius: 8px;
+    cursor:pointer;
+    font-size: 13px;
+    line-height:1.45;
+  }
+  .gen-item:hover{ background: rgba(255,255,255,0.05); }
+  .gen-item input[type=checkbox]{
+    margin-top: 3px;
+    flex-shrink:0;
+    accent-color: var(--accent);
+    width:16px; height:16px;
+  }
+  .gen-item span{ color: var(--text); }
+  .gen-error{
+    color: var(--danger);
+    font-size: 12.5px;
+    margin: -6px 0 12px;
+    display:none;
+    line-height:1.4;
+  }
+  .gen-error.show{ display:block; }
+
+  /* Snackbar */
+  #snack{
+    position: fixed;
+    left: 50%;
+    bottom: 92px;
+    transform: translateX(-50%) translateY(20px);
+    background: #23242b;
+    color: var(--text);
+    padding: 12px 18px;
+    border-radius: 10px;
+    font-size: 13.5px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+    opacity: 0;
+    pointer-events:none;
+    transition: opacity .2s ease, transform .2s ease;
+    max-width: min(420px, calc(100vw - 32px));
+    text-align:center;
+    z-index: 200;
+  }
+  #snack.show{
+    opacity:1;
+    transform: translateX(-50%) translateY(0);
+  }
+  #snack.error{ background: var(--danger-strong); }
+
+  input[type=file]{ display:none; }
+</style>
+</head>
+<body>
+
+<header class="appbar">
+  <h1 id="titleCount">Templates (0)</h1>
+  <button class="icon-btn" id="settingsBtn" title="GitHub sync settings">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.32 9c.13.31.34.6.61.85"/></svg>
+    <span class="dot" id="settingsDot"></span>
+  </button>
+  <button class="icon-btn" id="generateBtn" title="Generate with AI">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3l1.5 4.5L18 9l-4.5 1.5L12 15l-1.5-4.5L6 9l4.5-1.5L12 3Z"/><path d="M19 14l.7 2.1L22 17l-2.3.9L19 20l-.7-2.1L16 17l2.3-.9L19 14Z"/><path d="M5 14l.6 1.8L7.5 16.5l-1.9.7L5 19l-.6-1.8L2.5 16.5l1.9-.7L5 14Z"/></svg>
+  </button>
+  <button class="icon-btn" id="pasteBtn" title="Paste from clipboard">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9 2h6a1 1 0 0 1 1 1v1h1.5A1.5 1.5 0 0 1 19 5.5v15A1.5 1.5 0 0 1 17.5 22h-11A1.5 1.5 0 0 1 5 20.5v-15A1.5 1.5 0 0 1 6.5 4H8V3a1 1 0 0 1 1-1Z"/><path d="M9 3.5h6"/><path d="M9 13l2 2 4-4"/></svg>
+  </button>
+  <button class="icon-btn" id="exportBtn" title="Export to file">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3v12"/><path d="M7 10l5 5 5-5"/><path d="M4 19h16"/></svg>
+  </button>
+  <button class="icon-btn" id="importBtn" title="Import from file">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 15V3"/><path d="M7 8l5-5 5 5"/><path d="M4 19h16"/></svg>
+  </button>
+  <button class="icon-btn" id="clearBtn" title="Clear all">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 7h16"/><path d="M9 7V4.5A1.5 1.5 0 0 1 10.5 3h3A1.5 1.5 0 0 1 15 4.5V7"/><path d="M6 7l1 13a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1l1-13"/></svg>
+  </button>
+  <button class="icon-btn" id="reloadBtn" title="Reload">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M20 11a8 8 0 1 0-2.3 5.6"/><path d="M20 6v5h-5"/></svg>
+  </button>
+</header>
+
+<main>
+  <div class="hint" id="mainHint">One review per line. Paste a big list, edit freely, then Save. <button class="link-btn" id="setupLink">Set up GitHub sync</button> to push straight to your repo.</div>
+  <div class="editor-frame">
+    <textarea id="editor" spellcheck="false" placeholder="Great service, highly recommend!&#10;Loved the quality and quick service.&#10;... (paste as many lines as you like)"></textarea>
+  </div>
+  <div class="progress" id="progress"><div class="bar"></div></div>
+</main>
+
+<footer>
+  <div id="status" class="clean">All changes saved</div>
+  <button class="filled-btn" id="saveBtn" disabled>
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" width="16" height="16"><path d="M12 3v12"/><path d="M7 10l5 5 5-5"/><path d="M4 19h16"/></svg>
+    Save
+  </button>
+</footer>
+
+<input type="file" id="fileInput" accept=".txt,text/plain">
+
+<div class="overlay" id="overlay">
+  <div class="dialog" id="dialogBox"></div>
+</div>
+
+<div id="snack"></div>
+
+<script>
+(function(){
+  const STORAGE_KEY = 'review_templates_v1';
+  const GITHUB_CONFIG_KEY = 'review_templates_github_config_v1';
+
+  const editor = document.getElementById('editor');
+  const titleCount = document.getElementById('titleCount');
+  const status = document.getElementById('status');
+  const saveBtn = document.getElementById('saveBtn');
+  const progress = document.getElementById('progress');
+  const overlay = document.getElementById('overlay');
+  const dialogBox = document.getElementById('dialogBox');
+  const snack = document.getElementById('snack');
+  const fileInput = document.getElementById('fileInput');
+  const settingsDot = document.getElementById('settingsDot');
+  const mainHint = document.getElementById('mainHint');
+
+  let lastSavedText = '';
+  let lastSyncedToGithub = false;
+
+  /* ---------------- GitHub config helpers ---------------- */
+  function loadGithubConfig(){
+    try{
+      const raw = localStorage.getItem(GITHUB_CONFIG_KEY);
+      return raw ? JSON.parse(raw) : null;
+    }catch(e){ return null; }
+  }
+  function saveGithubConfig(cfg){
+    localStorage.setItem(GITHUB_CONFIG_KEY, JSON.stringify(cfg));
+  }
+  function githubConfigured(cfg){
+    cfg = cfg || loadGithubConfig();
+    return !!(cfg && cfg.token && cfg.owner && cfg.repo && cfg.path);
+  }
+  function updateSettingsIndicator(){
+    const cfg = loadGithubConfig();
+    settingsDot.className = 'dot' + (githubConfigured(cfg) ? ' show' : '');
+    mainHint.innerHTML = githubConfigured(cfg)
+      ? `One review per line. Saves push straight to <strong>${escapeHtml(cfg.owner)}/${escapeHtml(cfg.repo)}/${escapeHtml(cfg.path)}</strong>. <button class="link-btn" id="setupLink2">Edit settings</button>`
+      : `One review per line. Paste a big list, edit freely, then Save. <button class="link-btn" id="setupLink2">Set up GitHub sync</button> to push straight to your repo.`;
+    const link = document.getElementById('setupLink2');
+    if(link) link.addEventListener('click', openSettingsDialog);
+  }
+
+  function escapeHtml(str){
+    const d = document.createElement('div');
+    d.textContent = String(str == null ? '' : str);
+    return d.innerHTML;
+  }
+
+  function b64EncodeUnicode(str){
+    return btoa(unescape(encodeURIComponent(str)));
+  }
+  function b64DecodeUnicode(str){
+    return decodeURIComponent(escape(atob(str)));
+  }
+
+  async function githubApiErrorText(res){
+    try{
+      const j = await res.json();
+      return j && j.message ? j.message : res.statusText;
+    }catch(e){
+      return res.statusText || ('HTTP ' + res.status);
+    }
+  }
+
+  /* ---------------- GitHub read/write ---------------- */
+  async function fetchFromGithub(cfg){
+    const branch = cfg.branch || 'main';
+    const url = `https://api.github.com/repos/${encodeURIComponent(cfg.owner)}/${encodeURIComponent(cfg.repo)}/contents/${cfg.path.split('/').map(encodeURIComponent).join('/')}?ref=${encodeURIComponent(branch)}`;
+    const res = await fetch(url, {
+      headers: {
+        Authorization: `Bearer ${cfg.token}`,
+        Accept: 'application/vnd.github+json'
+      },
+      cache: 'no-store'
+    });
+    if(res.status === 404){
+      return { content: '', sha: null, existed: false };
+    }
+    if(!res.ok){
+      throw new Error(`Couldn't load from GitHub (${res.status}): ${await githubApiErrorText(res)}`);
+    }
+    const data = await res.json();
+    if(Array.isArray(data)){
+      throw new Error('That path points to a folder, not a file.');
+    }
+    const content = data.content ? b64DecodeUnicode(data.content.replace(/\n/g, '')) : '';
+    return { content, sha: data.sha, existed: true };
+  }
+
+  async function pushToGithub(cfg, text){
+    const branch = cfg.branch || 'main';
+    const url = `https://api.github.com/repos/${encodeURIComponent(cfg.owner)}/${encodeURIComponent(cfg.repo)}/contents/${cfg.path.split('/').map(encodeURIComponent).join('/')}`;
+
+    // Get current sha (needed to update an existing file; omit if new)
+    let sha = null;
+    const getRes = await fetch(`${url}?ref=${encodeURIComponent(branch)}`, {
+      headers: {
+        Authorization: `Bearer ${cfg.token}`,
+        Accept: 'application/vnd.github+json'
+      },
+      cache: 'no-store'
+    });
+    if(getRes.status === 200){
+      const data = await getRes.json();
+      sha = data.sha;
+    }else if(getRes.status !== 404){
+      throw new Error(`Couldn't check current file (${getRes.status}): ${await githubApiErrorText(getRes)}`);
+    }
+
+    const body = {
+      message: `Update review templates (${new Date().toISOString()})`,
+      content: b64EncodeUnicode(text),
+      branch
+    };
+    if(sha) body.sha = sha;
+
+    const putRes = await fetch(url, {
+      method: 'PUT',
+      headers: {
+        Authorization: `Bearer ${cfg.token}`,
+        Accept: 'application/vnd.github+json',
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(body)
+    });
+
+    if(!putRes.ok){
+      throw new Error(`GitHub save failed (${putRes.status}): ${await githubApiErrorText(putRes)}`);
+    }
+    return putRes.json();
+  }
+
+  /* ---------------- settings dialog ---------------- */
+  function openSettingsDialog(){
+    const cfg = loadGithubConfig() || {};
+    dialogBox.innerHTML = '';
+
+    const h2 = document.createElement('h2');
+    h2.textContent = 'GitHub sync settings';
+
+    const p = document.createElement('p');
+    p.textContent = "Save will push this text straight to a file in your repo. Your token is stored only in this browser's local storage — it's sent to api.github.com and nowhere else.";
+
+    const form = document.createElement('div');
+
+    function makeField(labelText, id, value, placeholder, type, hintText){
+      const wrap = document.createElement('div');
+      wrap.className = 'field';
+      const label = document.createElement('label');
+      label.textContent = labelText;
+      label.htmlFor = id;
+      const input = document.createElement('input');
+      input.type = type || 'text';
+      input.id = id;
+      input.value = value || '';
+      input.placeholder = placeholder || '';
+      input.autocomplete = 'off';
+      input.spellcheck = false;
+      wrap.appendChild(label);
+      wrap.appendChild(input);
+      if(hintText){
+        const h = document.createElement('div');
+        h.className = 'field-hint';
+        h.textContent = hintText;
+        wrap.appendChild(h);
+      }
+      return wrap;
+    }
+
+    form.appendChild(makeField('Personal access token', 'cfgToken', cfg.token, 'github_pat_xxxxxxxxxxxx', 'password', 'Needs "Contents: Read and write" on this repo.'));
+    form.appendChild(makeField('Repo owner', 'cfgOwner', cfg.owner, 'e.g. riyazclock'));
+    form.appendChild(makeField('Repo name', 'cfgRepo', cfg.repo, 'e.g. review'));
+    form.appendChild(makeField('Branch', 'cfgBranch', cfg.branch || 'main', 'main'));
+    form.appendChild(makeField('File path', 'cfgPath', cfg.path || 'review-templates.txt', 'review-templates.txt'));
+
+    const actionsRow = document.createElement('div');
+    actionsRow.className = 'dialog-actions';
+    actionsRow.style.justifyContent = 'space-between';
+
+    const removeBtn = document.createElement('button');
+    removeBtn.className = 'text-btn danger';
+    removeBtn.textContent = 'Remove token';
+    removeBtn.style.visibility = cfg.token ? 'visible' : 'hidden';
+    removeBtn.onclick = () => {
+      localStorage.removeItem(GITHUB_CONFIG_KEY);
+      overlay.classList.remove('show');
+      updateSettingsIndicator();
+      showSnack('GitHub settings cleared');
+    };
+
+    const rightActions = document.createElement('div');
+    rightActions.style.display = 'flex';
+    rightActions.style.gap = '8px';
+
+    const cancelBtn = document.createElement('button');
+    cancelBtn.className = 'text-btn';
+    cancelBtn.textContent = 'Cancel';
+    cancelBtn.onclick = () => overlay.classList.remove('show');
+
+    const saveSettingsBtn = document.createElement('button');
+    saveSettingsBtn.className = 'text-btn accent';
+    saveSettingsBtn.textContent = 'Save settings';
+    saveSettingsBtn.onclick = async () => {
+      const newCfg = {
+        token: document.getElementById('cfgToken').value.trim(),
+        owner: document.getElementById('cfgOwner').value.trim(),
+        repo: document.getElementById('cfgRepo').value.trim(),
+        branch: document.getElementById('cfgBranch').value.trim() || 'main',
+        path: document.getElementById('cfgPath').value.trim() || 'review-templates.txt'
+      };
+      if(!newCfg.token || !newCfg.owner || !newCfg.repo || !newCfg.path){
+        showSnack('Fill in token, owner, repo, and file path', true);
+        return;
+      }
+      saveGithubConfig(newCfg);
+      overlay.classList.remove('show');
+      updateSettingsIndicator();
+      showSnack('GitHub settings saved');
+
+      // Offer to load the current live content into the box right away
+      if(!isDirty()){
+        await tryLoadFromGithub(newCfg, true);
+      }
+    };
+
+    rightActions.appendChild(cancelBtn);
+    rightActions.appendChild(saveSettingsBtn);
+    actionsRow.appendChild(removeBtn);
+    actionsRow.appendChild(rightActions);
+
+    dialogBox.appendChild(h2);
+    dialogBox.appendChild(p);
+    dialogBox.appendChild(form);
+    dialogBox.appendChild(actionsRow);
+    overlay.classList.add('show');
+  }
+
+  /* ---------------- AI generation (Puter.js — free, keyless) ---------------- */
+  function buildGenPrompt(businessType, tone, count){
+    return `Write ${count} short, realistic customer review templates for a ${businessType} business. Tone: ${tone}.
+Rules:
+- One review per line, no numbering, no bullet characters, no quotation marks.
+- Each review should be 1-2 sentences and sound like a genuine customer wrote it, not a marketing slogan.
+- Vary the wording, structure, and specific details between lines so they don't feel copy-pasted from each other.
+- Output only the review lines themselves — no preamble, no headers, no explanation, no closing remarks.`;
+  }
+
+  function extractResponseText(response){
+    if(response == null) return '';
+    if(typeof response === 'string') return response;
+    if(response.message && response.message.content){
+      const c = response.message.content;
+      if(typeof c === 'string') return c;
+      if(Array.isArray(c)) return c.map(b => (b && typeof b.text === 'string') ? b.text : '').join('\n');
+    }
+    if(typeof response.toString === 'function'){
+      const s = response.toString();
+      if(s && s !== '[object Object]') return s;
+    }
+    return '';
+  }
+
+  function parseGenerated(text){
+    return text
+      .split('\n')
+      .map(l => l.trim())
+      .map(l => l.replace(/^[-*\u2022]\s+/, ''))
+      .map(l => l.replace(/^\d+[\.\)]\s+/, ''))
+      .map(l => l.replace(/^"(.*)"$/, '$1'))
+      .filter(l => l.length > 0);
+  }
+
+  function openGenerateDialog(prefill){
+    prefill = prefill || {};
+    dialogBox.innerHTML = '';
+
+    const h2 = document.createElement('h2');
+    h2.textContent = '✨ Generate with AI';
+
+    const p = document.createElement('p');
+    p.textContent = "Powered by Puter.js — free to use, no API key needed on our end. You may see a one-time Puter sign-in popup the first time you generate.";
+
+    const form = document.createElement('div');
+
+    function makeField(labelText, id, el){
+      const wrap = document.createElement('div');
+      wrap.className = 'field';
+      const label = document.createElement('label');
+      label.textContent = labelText;
+      label.htmlFor = id;
+      wrap.appendChild(label);
+      wrap.appendChild(el);
+      return wrap;
+    }
+
+    const bizInput = document.createElement('input');
+    bizInput.type = 'text';
+    bizInput.id = 'genBiz';
+    bizInput.placeholder = 'e.g. coffee shop, dental clinic, hair salon';
+    bizInput.autocomplete = 'off';
+    bizInput.value = prefill.businessType || '';
+
+    const toneSelect = document.createElement('select');
+    toneSelect.id = 'genTone';
+    ['Friendly & warm','Professional','Enthusiastic','Casual & fun','Grateful & humble'].forEach(t => {
+      const opt = document.createElement('option');
+      opt.value = t;
+      opt.textContent = t;
+      if(prefill.tone === t) opt.selected = true;
+      toneSelect.appendChild(opt);
+    });
+
+    const countInput = document.createElement('input');
+    countInput.type = 'number';
+    countInput.id = 'genCount';
+    countInput.min = '1';
+    countInput.max = '30';
+    countInput.value = prefill.count || '8';
+
+    form.appendChild(makeField('Business type', 'genBiz', bizInput));
+    form.appendChild(makeField('Tone', 'genTone', toneSelect));
+    form.appendChild(makeField('How many', 'genCount', countInput));
+
+    const errorMsg = document.createElement('div');
+    errorMsg.className = 'gen-error';
+
+    const actionsRow = document.createElement('div');
+    actionsRow.className = 'dialog-actions';
+
+    const cancelBtn = document.createElement('button');
+    cancelBtn.className = 'text-btn';
+    cancelBtn.textContent = 'Cancel';
+    cancelBtn.onclick = () => overlay.classList.remove('show');
+
+    const genBtn = document.createElement('button');
+    genBtn.className = 'filled-btn';
+    genBtn.textContent = 'Generate';
+
+    genBtn.onclick = async () => {
+      const businessType = bizInput.value.trim();
+      if(!businessType){
+        errorMsg.textContent = 'Tell us what kind of business this is for.';
+        errorMsg.classList.add('show');
+        bizInput.focus();
+        return;
+      }
+      errorMsg.classList.remove('show');
+      const tone = toneSelect.value;
+      let count = parseInt(countInput.value, 10);
+      if(!Number.isFinite(count) || count < 1) count = 1;
+      if(count > 30) count = 30;
+
+      genBtn.disabled = true;
+      cancelBtn.disabled = true;
+      genBtn.innerHTML = '';
+      const spinner = document.createElement('span');
+      spinner.className = 'spinner';
+      genBtn.appendChild(spinner);
+      genBtn.appendChild(document.createTextNode(' Generating…'));
+
+      try{
+        if(typeof puter === 'undefined' || !puter.ai || !puter.ai.chat){
+          throw new Error("AI library didn't load — check your connection and try again.");
+        }
+        const prompt = buildGenPrompt(businessType, tone, count);
+        const response = await puter.ai.chat(prompt);
+        const text = extractResponseText(response);
+        const lines = parseGenerated(text).slice(0, count);
+        if(lines.length === 0){
+          throw new Error("The AI didn't return any templates — try again.");
+        }
+        openPreviewDialog(lines, {businessType, tone, count});
+      }catch(e){
+        errorMsg.textContent = 'Generation failed: ' + (e && e.message ? e.message : 'Unknown error');
+        errorMsg.classList.add('show');
+        genBtn.disabled = false;
+        cancelBtn.disabled = false;
+        genBtn.textContent = 'Generate';
+      }
+    };
+
+    actionsRow.appendChild(cancelBtn);
+    actionsRow.appendChild(genBtn);
+
+    dialogBox.appendChild(h2);
+    dialogBox.appendChild(p);
+    dialogBox.appendChild(form);
+    dialogBox.appendChild(errorMsg);
+    dialogBox.appendChild(actionsRow);
+    overlay.classList.add('show');
+    bizInput.focus();
+  }
+
+  function openPreviewDialog(lines, meta){
+    dialogBox.innerHTML = '';
+
+    const h2 = document.createElement('h2');
+    h2.textContent = `Preview (${lines.length})`;
+
+    const p = document.createElement('p');
+    p.textContent = `Generated for "${meta.businessType}" — ${meta.tone}. Uncheck any you don't want, then insert.`;
+
+    const list = document.createElement('div');
+    list.className = 'gen-list';
+
+    const checkboxes = [];
+    lines.forEach((line, i) => {
+      const row = document.createElement('label');
+      row.className = 'gen-item';
+      const cb = document.createElement('input');
+      cb.type = 'checkbox';
+      cb.checked = true;
+      const span = document.createElement('span');
+      span.textContent = line;
+      row.appendChild(cb);
+      row.appendChild(span);
+      list.appendChild(row);
+      checkboxes.push({cb, line});
+    });
+
+    const actionsRow = document.createElement('div');
+    actionsRow.className = 'dialog-actions';
+    actionsRow.style.justifyContent = 'space-between';
+
+    const backBtn = document.createElement('button');
+    backBtn.className = 'text-btn';
+    backBtn.textContent = 'Back';
+    backBtn.onclick = () => openGenerateDialog(meta);
+
+    const rightActions = document.createElement('div');
+    rightActions.style.display = 'flex';
+    rightActions.style.gap = '8px';
+
+    const discardBtn = document.createElement('button');
+    discardBtn.className = 'text-btn';
+    discardBtn.textContent = 'Discard';
+    discardBtn.onclick = () => overlay.classList.remove('show');
+
+    const insertBtn = document.createElement('button');
+    insertBtn.className = 'filled-btn';
+    insertBtn.textContent = 'Insert selected';
+    insertBtn.onclick = () => {
+      const selected = checkboxes.filter(x => x.cb.checked).map(x => x.line);
+      if(selected.length === 0){
+        showSnack('Nothing selected', true);
+        return;
+      }
+      const current = editor.value;
+      const prefix = current.length > 0 && !current.endsWith('\n') ? '\n' : '';
+      editor.value = current + prefix + selected.join('\n');
+      refresh();
+      overlay.classList.remove('show');
+      showSnack(`Inserted ${selected.length} template${selected.length === 1 ? '' : 's'}`);
+    };
+
+    rightActions.appendChild(discardBtn);
+    rightActions.appendChild(insertBtn);
+    actionsRow.appendChild(backBtn);
+    actionsRow.appendChild(rightActions);
+
+    dialogBox.appendChild(h2);
+    dialogBox.appendChild(p);
+    dialogBox.appendChild(list);
+    dialogBox.appendChild(actionsRow);
+    overlay.classList.add('show');
+  }
+
+  function linesInBox(){
+    return editor.value
+      .split('\n')
+      .map(l => l.trim())
+      .filter(l => l.length > 0);
+  }
+
+  function isDirty(){
+    return editor.value !== lastSavedText;
+  }
+
+  function refresh(){
+    const lines = linesInBox();
+    titleCount.textContent = `Templates (${lines.length})`;
+    const dirty = isDirty();
+    if(dirty){
+      status.textContent = 'Unsaved changes';
+      status.className = 'dirty';
+    }else if(lastSyncedToGithub){
+      status.textContent = 'Synced to GitHub';
+      status.className = 'synced';
+    }else{
+      status.textContent = 'All changes saved';
+      status.className = 'clean';
+    }
+    saveBtn.disabled = !dirty;
+  }
+
+  function showSnack(msg, isError){
+    snack.textContent = msg;
+    snack.className = isError ? 'show error' : 'show';
+    clearTimeout(showSnack._t);
+    showSnack._t = setTimeout(() => { snack.className = snack.className.replace('show',''); }, 2600);
+  }
+
+  function showBusy(on){
+    progress.className = on ? 'progress show' : 'progress';
+  }
+
+  function dialog({title, body, actions}){
+    return new Promise(resolve => {
+      dialogBox.innerHTML = '';
+      const h2 = document.createElement('h2');
+      h2.textContent = title;
+      const p = document.createElement('p');
+      p.textContent = body;
+      const actionsRow = document.createElement('div');
+      actionsRow.className = 'dialog-actions';
+      actions.forEach(a => {
+        const btn = document.createElement('button');
+        btn.className = 'text-btn' + (a.danger ? ' danger' : '');
+        btn.textContent = a.label;
+        btn.onclick = () => { overlay.classList.remove('show'); resolve(a.value); };
+        actionsRow.appendChild(btn);
+      });
+      dialogBox.appendChild(h2);
+      dialogBox.appendChild(p);
+      dialogBox.appendChild(actionsRow);
+      overlay.classList.add('show');
+    });
+  }
+
+  /* ---------------- load (GitHub first, local fallback) ---------------- */
+  async function tryLoadFromGithub(cfg, silent){
+    showBusy(true);
+    try{
+      const result = await fetchFromGithub(cfg);
+      editor.value = result.content;
+      lastSavedText = result.content;
+      lastSyncedToGithub = true;
+      localStorage.setItem(STORAGE_KEY, result.content); // keep a local cache too
+      refresh();
+      if(!silent){
+        showSnack(result.existed ? 'Loaded current file from GitHub' : 'File doesn\'t exist yet on GitHub — Save will create it');
+      }
+      return true;
+    }catch(err){
+      loadFromLocalOnly();
+      showSnack('Couldn\'t load from GitHub: ' + err.message, true);
+      return false;
+    }finally{
+      showBusy(false);
+    }
+  }
+
+  function loadFromLocalOnly(){
+    const raw = localStorage.getItem(STORAGE_KEY);
+    const text = raw !== null ? raw : '';
+    editor.value = text;
+    lastSavedText = text;
+    lastSyncedToGithub = false;
+    refresh();
+  }
+
+  async function load(){
+    const cfg = loadGithubConfig();
+    if(githubConfigured(cfg)){
+      await tryLoadFromGithub(cfg, true);
+    }else{
+      loadFromLocalOnly();
+    }
+  }
+
+  /* ---------------- save ---------------- */
+  async function save(){
+    const lines = linesInBox();
+
+    if(lines.length === 0){
+      const confirmed = await dialog({
+        title: 'Save an empty list?',
+        body: 'The box is empty. Saving now will remove every stored template. This can\'t be undone.',
+        actions: [
+          {label:'Cancel', value:false},
+          {label:'Save empty', value:true, danger:true},
+        ]
+      });
+      if(!confirmed) return;
+    }
+
+    const cfg = loadGithubConfig();
+    const useGithub = githubConfigured(cfg);
+
+    showBusy(true);
+    saveBtn.disabled = true;
+    try{
+      const normalized = lines.join('\n');
+
+      if(useGithub){
+        await pushToGithub(cfg, normalized);
+        localStorage.setItem(STORAGE_KEY, normalized);
+        editor.value = normalized;
+        lastSavedText = normalized;
+        lastSyncedToGithub = true;
+        showSnack(`Saved ${lines.length} template${lines.length === 1 ? '' : 's'} to GitHub`);
+      }else{
+        // brief delay keeps the local-only action feeling deliberate
+        await new Promise(r => setTimeout(r, 150));
+        localStorage.setItem(STORAGE_KEY, normalized);
+        editor.value = normalized;
+        lastSavedText = normalized;
+        lastSyncedToGithub = false;
+        showSnack(`Saved locally — set up GitHub sync to push live (${lines.length} template${lines.length === 1 ? '' : 's'})`);
+      }
+    }catch(e){
+      showSnack('Failed to save: ' + e.message, true);
+    }finally{
+      showBusy(false);
+      refresh();
+    }
+  }
+
+  async function clearAll(){
+    const confirmed = await dialog({
+      title: 'Clear all templates?',
+      body: 'This empties the text box. Nothing is removed from GitHub or storage until you tap Save.',
+      actions: [
+        {label:'Cancel', value:false},
+        {label:'Clear', value:true, danger:true},
+      ]
+    });
+    if(confirmed){
+      editor.value = '';
+      refresh();
+    }
+  }
+
+  async function reload(){
+    if(isDirty()){
+      const confirmed = await dialog({
+        title: 'Discard unsaved changes?',
+        body: 'You have edits that haven\'t been saved yet.',
+        actions: [
+          {label:'Keep editing', value:false},
+          {label:'Discard', value:true, danger:true},
+        ]
+      });
+      if(!confirmed) return;
+    }
+    await load();
+    showSnack(githubConfigured() ? 'Reloaded from GitHub' : 'Reloaded from local storage');
+  }
+
+  async function pasteFromClipboard(){
+    try{
+      const text = await navigator.clipboard.readText();
+      if(!text){ showSnack('Clipboard is empty'); return; }
+      const start = editor.selectionStart ?? editor.value.length;
+      const end = editor.selectionEnd ?? editor.value.length;
+      editor.value = editor.value.slice(0, start) + text + editor.value.slice(end);
+      refresh();
+    }catch(e){
+      showSnack('Couldn\'t read clipboard — paste manually with your keyboard', true);
+    }
+  }
+
+  function exportFile(){
+    const lines = linesInBox();
+    const blob = new Blob([lines.join('\n')], {type:'text/plain'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'review-templates.txt';
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+    showSnack('Exported to review-templates.txt');
+  }
+
+  function importFile(){
+    fileInput.value = '';
+    fileInput.click();
+  }
+
+  fileInput.addEventListener('change', async () => {
+    const file = fileInput.files && fileInput.files[0];
+    if(!file) return;
+    const text = await file.text();
+    if(isDirty()){
+      const confirmed = await dialog({
+        title: 'Replace current text?',
+        body: 'Importing will replace everything currently in the box.',
+        actions: [
+          {label:'Cancel', value:false},
+          {label:'Replace', value:true},
+        ]
+      });
+      if(!confirmed) return;
+    }
+    editor.value = text;
+    refresh();
+    showSnack(`Imported from ${file.name}`);
+  });
+
+  editor.addEventListener('input', refresh);
+  document.getElementById('saveBtn').addEventListener('click', save);
+  document.getElementById('clearBtn').addEventListener('click', clearAll);
+  document.getElementById('reloadBtn').addEventListener('click', reload);
+  document.getElementById('pasteBtn').addEventListener('click', pasteFromClipboard);
+  document.getElementById('exportBtn').addEventListener('click', exportFile);
+  document.getElementById('importBtn').addEventListener('click', importFile);
+  document.getElementById('settingsBtn').addEventListener('click', openSettingsDialog);
+  document.getElementById('generateBtn').addEventListener('click', () => openGenerateDialog());
+  document.getElementById('setupLink').addEventListener('click', openSettingsDialog);
+
+  window.addEventListener('beforeunload', (e) => {
+    if(isDirty()){
+      e.preventDefault();
+      e.returnValue = '';
+    }
+  });
+
+  updateSettingsIndicator();
+  load();
+})();
+</script>
+
+</body>
+</html>
