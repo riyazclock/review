@@ -1,5 +1,5 @@
 name=Your Shop Name
-logo=https://raw.githubusercontent.com/USER/REPO/main/logo.png
+logo=https://static.vecteezy.com/system/resources/thumbnails/019/166/318/small/lion-head-lion-logo-symbol-gaming-logo-elegant-element-for-brand-abstract-symbols-vector.jpg
 google=https://search.google.com/local/writereview?placeid=ChIJF-CRvzRnUjoRDiOkSgqOYlk&utm
 instagram=https://instagram.com/yourshop
 whatsapp=https://wa.me/91XXXXXXXXXX
