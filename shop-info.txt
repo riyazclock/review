@@ -3,4 +3,4 @@ logo=https://static.vecteezy.com/system/resources/thumbnails/019/166/318/small/l
 google=https://search.google.com/local/writereview?placeid=ChIJF-CRvzRnUjoRDiOkSgqOYlk&utm
 instagram=https://instagram.com/yourshop
 whatsapp=https://wa.me/91XXXXXXXXXX
-facebook=https://facebook.com/yourshop
+facebook=
